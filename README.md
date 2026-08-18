@@ -1,153 +1,116 @@
 # Real-Time Customer Data Platform
 
-A production-oriented, event-driven data platform designed to demonstrate real-time Data Engineering patterns used in modern product companies.
+[![CI](https://github.com/abhi9265/real-time-customer-data-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/abhi9265/real-time-customer-data-platform/actions/workflows/ci.yml)
 
-## Objective
+A production-oriented **real-time data platform** that demonstrates how a product engineering team can ingest customer events, enforce data contracts, process streams with Spark, maintain historical customer state, and serve analytics-ready datasets.
 
-Build a reliable customer-event platform capable of ingesting high-volume product events, validating and evolving event contracts, processing streams with Spark Structured Streaming, maintaining customer state, and publishing low-latency analytics datasets.
+> **Portfolio focus:** distributed data processing, streaming reliability, incremental computation, CDC/SCD2, data quality, testing, CI/CD, and AI-ready data foundations.
 
-## Core Architecture
+## Architecture
 
 ```text
-Product Applications / Services
-            |
-            v
-      Event Producer
-            |
-            v
-        Apache Kafka
-            |
-            v
-  Spark Structured Streaming
-            |
-      +-----+------+
-      |            |
-      v            v
-   Bronze       Quarantine
-   Delta           Delta
-      |
-      v
-   Silver
-   Delta
-      |
-  +---+----------------+
-  |                    |
-  v                    v
-Customer 360       Real-Time KPIs
-  |                    |
-  +---------+----------+
-            |
-            v
-       Gold / Serving
-        |          |
-        v          v
-      BI / SQL   ML Features
+Product Applications
+        │
+        ▼
+   Event Producer
+        │
+        ▼
+      Kafka
+        │
+        ▼
+Spark Structured Streaming
+        │
+   ┌────┴────┐
+   ▼         ▼
+Bronze    Quarantine
+ Delta       Delta
+   │
+   ▼
+ Silver Events
+   │
+   ├── Quality + Deduplication
+   ├── Customer State
+   └── Sessionization
+          │
+          ▼
+     Customer 360
+          │
+        CDC/SCD2
+          │
+          ▼
+        Gold
+   ┌──────┼────────┐
+   ▼      ▼        ▼
+  KPIs  Revenue  Funnels
+   │      │        │
+   └──────┼────────┘
+          ▼
+   BI / ML / AI workloads
 ```
 
-## Technology Stack
+## Engineering Capabilities
 
-- Apache Kafka
-- Azure Databricks
-- Spark Structured Streaming
-- PySpark
-- Delta Lake
-- Python
-- SQL
-- GitHub Actions
-- Docker (local development)
-- Power BI / SQL serving (planned)
-
-## Engineering Topics
-
-- Event-driven architecture
-- Streaming ingestion and checkpointing
-- Watermarks and late-arriving events
-- Idempotent processing
-- Event deduplication
-- Schema contracts and schema evolution
-- CDC and state management
-- SCD Type 2
-- Data-quality quarantine
-- Observability and pipeline SLAs
-- Performance and shuffle optimization
-- CI/CD and environment promotion
-- Failure recovery and replay
+| Area | Demonstrated capability |
+|---|---|
+| Streaming | Kafka, Structured Streaming, checkpoints, watermarks |
+| Reliability | Event identity, deduplication, replay-oriented design |
+| Lakehouse | Bronze/Silver/Gold Delta architecture |
+| Data quality | Contract validation, rejection reasons, quarantine |
+| Customer data | Sessionization, customer state, CDC/SCD2 |
+| Analytics | Customer KPIs, revenue, funnel and product metrics |
+| Testing | PySpark unit tests with local Spark fixture |
+| CI/CD | GitHub Actions on pull requests and `main` |
+| AI readiness | Customer-state and analytics foundations for feature/embedding pipelines |
 
 ## Repository Structure
 
 ```text
-real-time-customer-data-platform/
-├── .github/workflows/
-├── architecture/
-│   ├── system-design.md
-│   ├── streaming-design.md
-│   └── adr/
-├── schemas/
-│   ├── events/
-│   └── versions/
-├── src/
-│   ├── ingestion/
-│   ├── streaming/
-│   ├── bronze/
-│   ├── silver/
-│   ├── gold/
-│   ├── cdc/
-│   ├── quality/
-│   └── common/
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── data_contract/
-├── configs/
-│   ├── dev/
-│   ├── test/
-│   └── prod/
-├── benchmarks/
-├── notebooks/
-├── infra/
-├── docs/
-├── pyproject.toml
-└── README.md
+.github/workflows/     CI automation
+architecture/          system design and ADRs
+docs/                  engineering and operational design
+schemas/               event contracts and versions
+src/                   ingestion, streaming, Silver, Customer 360 and Gold
+tests/                 unit and data-contract tests
+pyproject.toml         Python project and test dependencies
 ```
 
-## Delivery Roadmap
+## Development Workflow
 
-### Phase 1 — Platform foundation
-- System design and architecture decisions
-- Event contract and versioning strategy
-- Local development contract
-- Repository conventions
+Changes are developed through feature branches and pull requests. CI validates tests before changes are merged to `main`.
 
-### Phase 2 — Event ingestion
-- Kafka producer
-- Event generation
-- Partitioning and message keys
+```text
+Issue / design
+    ↓
+Feature branch
+    ↓
+Implementation + tests
+    ↓
+Pull request
+    ↓
+GitHub Actions
+    ↓
+Review / validation
+    ↓
+main
+```
 
-### Phase 3 — Streaming processing
-- Structured Streaming ingestion
-- Checkpointing
-- Watermarks
-- Deduplication
-- Bronze/Silver processing
+## Current Status
 
-### Phase 4 — Customer state and CDC
-- Change-data capture simulation
-- Current-state reconstruction
-- SCD Type 2 history
-- Customer 360
+**Core streaming, Silver, Customer 360/SCD2, and Gold analytics foundations are implemented.**
 
-### Phase 5 — Real-time analytics
-- Streaming Gold tables
-- Sliding/tumbling window KPIs
-- Conversion and engagement metrics
+The next engineering milestones are production hardening: observability, data-quality SLAs, pipeline audit, performance benchmarks, deployment/environment contracts, and AI/ML feature pipelines.
 
-### Phase 6 — Production hardening
-- Data-quality gates
-- Observability
-- Performance benchmarks
-- CI/CD
-- Failure and recovery tests
+## Interview Topics
 
-## Status
+The project is intentionally designed to support system-design discussions around:
 
-**Phase 1 — Platform foundation**
+- Kafka partitioning and delivery semantics
+- Watermarks and late-arriving events
+- Idempotency and replay
+- Spark state and shuffle behavior
+- Incremental versus full recomputation
+- CDC ordering and SCD Type 2
+- Data-quality failure handling
+- Lakehouse modeling and serving-layer grain
+- CI/CD and production reliability
+- Designing data foundations for AI/ML workloads
