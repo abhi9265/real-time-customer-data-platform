@@ -1,15 +1,17 @@
 [project]
 name = "real-time-customer-data-platform"
-version = "0.1.0"
+version = "0.2.0"
 description = "Production-oriented real-time customer data platform"
 requires-python = ">=3.11,<3.13"
 dependencies = [
   "jsonschema>=4.23,<5",
+  "confluent-kafka>=2.11,<3",
 ]
 
 [project.optional-dependencies]
 test = [
   "pytest>=8,<9",
+  "pyspark>=4.0,<4.1",
 ]
 
 [tool.pytest.ini_options]
