@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# Local Spark / Delta output
+spark-warehouse/
+metastore_db/
+*.log
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+dist/
+build/
