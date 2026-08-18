@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OrderCreatedEventV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "event_type", "event_version", "event_timestamp", "user_id", "order_id", "currency", "total_amount"],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 1},
+    "event_type": {"type": "string", "const": "order_created"},
+    "event_version": {"type": "integer", "const": 1},
+    "event_timestamp": {"type": "string", "format": "date-time"},
+    "user_id": {"type": "string", "minLength": 1},
+    "order_id": {"type": "string", "minLength": 1},
+    "currency": {"type": "string", "pattern": "^[A-Z]{3}$"},
+    "total_amount": {"type": "number", "minimum": 0}
+  }
+}

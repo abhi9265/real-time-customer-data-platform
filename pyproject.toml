@@ -1,0 +1,18 @@
+[project]
+name = "real-time-customer-data-platform"
+version = "0.1.0"
+description = "Production-oriented real-time customer data platform"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "jsonschema>=4.23,<5",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8,<9",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
