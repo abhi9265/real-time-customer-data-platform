@@ -10,6 +10,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
   "pytest>=8,<9",
+  "pyspark>=4.0,<4.1",
 ]
 
 [tool.pytest.ini_options]
