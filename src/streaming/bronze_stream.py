@@ -45,9 +45,15 @@ def parse_and_classify_events(kafka_df: DataFrame, allowed_lateness: str = "15 m
         .withColumn("ingested_at", F.current_timestamp())
     )
 
+    # Spark's permissive from_json mode can materialize an all-null struct for
+    # malformed JSON. Keep a lightweight syntax guard so corrupt payloads are
+    # distinguished from valid JSON that simply violates required fields.
+    json_shape_valid = F.col("raw_payload").rlike(r"^\\s*\\{.*\\}\\s*$")
+
     classified = parsed.withColumn(
         "quarantine_reason",
-        F.when(F.col("event").isNull(), F.lit("INVALID_JSON_OR_SCHEMA"))
+        F.when(~json_shape_valid, F.lit("INVALID_JSON_OR_SCHEMA"))
+        .when(F.col("event").isNull(), F.lit("INVALID_JSON_OR_SCHEMA"))
         .when(F.col("event_id").isNull(), F.lit("MISSING_EVENT_ID"))
         .when(F.col("event_timestamp").isNull(), F.lit("INVALID_EVENT_TIMESTAMP"))
         .when(F.col("user_id").isNull(), F.lit("MISSING_USER_ID"))
