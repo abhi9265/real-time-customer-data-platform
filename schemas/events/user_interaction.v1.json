@@ -3,15 +3,7 @@
   "title": "UserInteractionEventV1",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "event_id",
-    "event_type",
-    "event_version",
-    "event_timestamp",
-    "user_id",
-    "session_id",
-    "properties"
-  ],
+  "required": ["event_id", "event_type", "event_version", "event_timestamp", "user_id", "session_id", "source", "trace_id", "properties"],
   "properties": {
     "event_id": {"type": "string", "minLength": 1},
     "event_type": {"type": "string", "enum": ["product_viewed", "cart_added", "checkout_started"]},
@@ -20,6 +12,8 @@
     "user_id": {"type": "string", "minLength": 1},
     "session_id": {"type": "string", "minLength": 1},
     "product_id": {"type": ["string", "null"]},
+    "source": {"type": "string", "minLength": 1},
+    "trace_id": {"type": "string", "minLength": 1},
     "properties": {"type": "object"}
   }
 }
