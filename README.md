@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/abhi9265/real-time-customer-data-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/abhi9265/real-time-customer-data-platform/actions/workflows/ci.yml)
 
-A production-oriented **real-time data platform** that demonstrates how a product engineering team can ingest customer events, enforce data contracts, process streams with Spark, maintain historical customer state, and serve analytics-ready datasets.
+A production-oriented **real-time customer data platform** designed around a realistic product-event workload: Kafka ingestion, Spark Structured Streaming, Delta Lake, contract enforcement, quarantine, incremental Customer 360, CDC/SCD2 and analytics serving.
 
-> **Portfolio focus:** distributed data processing, streaming reliability, incremental computation, CDC/SCD2, data quality, testing, CI/CD, and AI-ready data foundations.
+> **Engineering goal:** make the data path observable, replayable, testable and safe enough to support downstream BI/ML/AI workloads.
 
 ## Architecture
 
@@ -12,13 +12,18 @@ A production-oriented **real-time data platform** that demonstrates how a produc
 Product Applications
         │
         ▼
-   Event Producer
+ Contract-shaped Event Producer
         │
         ▼
       Kafka
         │
         ▼
 Spark Structured Streaming
+        │
+        ├── schema parsing
+        ├── event-time watermark
+        ├── event-id deduplication
+        └── checkpointing
         │
    ┌────┴────┐
    ▼         ▼
@@ -28,9 +33,9 @@ Bronze    Quarantine
    ▼
  Silver Events
    │
-   ├── Quality + Deduplication
-   ├── Customer State
-   └── Sessionization
+   ├── deterministic DQ
+   ├── customer state
+   └── sessionization
           │
           ▼
      Customer 360
@@ -42,75 +47,93 @@ Bronze    Quarantine
    ┌──────┼────────┐
    ▼      ▼        ▼
   KPIs  Revenue  Funnels
-   │      │        │
-   └──────┼────────┘
+          │
           ▼
-   BI / ML / AI workloads
+       BI / ML / AI
+
+Cross-cutting: CI/CD · audit · quality · replay · observability
 ```
 
 ## Engineering Capabilities
 
 | Area | Demonstrated capability |
 |---|---|
-| Streaming | Kafka, Structured Streaming, checkpoints, watermarks |
-| Reliability | Event identity, deduplication, replay-oriented design |
+| Streaming | Kafka, Structured Streaming, event-time processing, watermarks |
+| Reliability | Idempotent producer, stable event identity, deduplication, checkpoints |
+| Replay | `startingOffsets` control and `availableNow` batch mode |
 | Lakehouse | Bronze/Silver/Gold Delta architecture |
-| Data quality | Contract validation, rejection reasons, quarantine |
+| Contracts | Versioned JSON event envelope and domain event schemas |
+| Data quality | Deterministic validation, rejection reasons, quarantine and metrics |
 | Customer data | Sessionization, customer state, CDC/SCD2 |
 | Analytics | Customer KPIs, revenue, funnel and product metrics |
-| Testing | PySpark unit tests with local Spark fixture |
+| Observability | Pipeline audit records, record counts, quarantine counts and watermark tracking |
+| Testing | PySpark/local unit tests plus event-contract tests |
 | CI/CD | GitHub Actions on pull requests and `main` |
-| AI readiness | Customer-state and analytics foundations for feature/embedding pipelines |
+| AI readiness | Governed Customer 360 and analytics context for downstream feature/RAG workloads |
 
 ## Repository Structure
 
 ```text
-.github/workflows/     CI automation
-architecture/          system design and ADRs
-docs/                  engineering and operational design
-schemas/               event contracts and versions
-src/                   ingestion, streaming, Silver, Customer 360 and Gold
-tests/                 unit and data-contract tests
-pyproject.toml         Python project and test dependencies
+.github/workflows/       CI automation
+architecture/            system design and ADRs
+docs/                    engineering and operational design
+schemas/events/          versioned event contracts
+src/producer/             deterministic Kafka event producer
+src/streaming/            Kafka → Bronze Structured Streaming
+src/silver/               Silver normalization and quality
+src/customer360/          sessionization, state and SCD2
+src/gold/                 analytics serving layer
+src/observability/        DQ and pipeline audit helpers
+tests/                    unit and data-contract tests
 ```
+
+## Operational Design
+
+The platform treats failures as data, not silent exceptions:
+
+- malformed or incomplete events are classified with deterministic reasons;
+- trusted and rejected records can be separated before downstream serving;
+- checkpoints provide restart/recovery state;
+- event IDs provide an idempotency key for duplicate delivery;
+- event-time watermarks bound late-data state;
+- audit records capture input/output/quarantine counts and pipeline status;
+- `availableNow` supports bounded replay/backfill runs from a configured Kafka offset boundary.
 
 ## Development Workflow
 
-Changes are developed through feature branches and pull requests. CI validates tests before changes are merged to `main`.
-
 ```text
-Issue / design
-    ↓
+Design / Issue
+     ↓
 Feature branch
-    ↓
+     ↓
 Implementation + tests
-    ↓
+     ↓
 Pull request
-    ↓
+     ↓
 GitHub Actions
-    ↓
-Review / validation
-    ↓
+     ↓
+Review + validation
+     ↓
 main
 ```
 
 ## Current Status
 
-**Core streaming, Silver, Customer 360/SCD2, and Gold analytics foundations are implemented.**
+**Implemented:** Kafka producer foundation, contract-shaped events, Kafka → Bronze Structured Streaming, Silver quality/deduplication, Customer 360/SCD2, Gold product analytics, DQ metrics and pipeline-audit foundations.
 
-The next engineering milestones are production hardening: observability, data-quality SLAs, pipeline audit, performance benchmarks, deployment/environment contracts, and AI/ML feature pipelines.
+**Next:** production deployment contracts, SLA monitoring, performance benchmarks, stronger integration tests and a governed AI/ML consumer layer.
 
 ## Interview Topics
 
-The project is intentionally designed to support system-design discussions around:
-
 - Kafka partitioning and delivery semantics
+- Idempotency and duplicate delivery
+- Event-time versus processing-time
 - Watermarks and late-arriving events
-- Idempotency and replay
-- Spark state and shuffle behavior
+- Checkpoint recovery and replay
+- Spark state/shuffle trade-offs
 - Incremental versus full recomputation
 - CDC ordering and SCD Type 2
-- Data-quality failure handling
+- Data-quality quarantine design
+- Auditability and pipeline SLAs
 - Lakehouse modeling and serving-layer grain
-- CI/CD and production reliability
 - Designing data foundations for AI/ML workloads
