@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PaymentCompletedEventV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "event_type", "event_version", "event_timestamp", "user_id", "source", "trace_id", "properties"],
+  "properties": {
+    "event_id": {"type": "string"}, "event_type": {"const": "payment_completed"}, "event_version": {"const": 1},
+    "event_timestamp": {"type": "string", "format": "date-time"}, "user_id": {"type": "string"},
+    "session_id": {"type": ["string", "null"]}, "product_id": {"type": ["string", "null"]},
+    "source": {"type": "string"}, "trace_id": {"type": "string"},
+    "properties": {"type": "object", "required": ["order_id", "amount", "currency", "payment_method"], "properties": {
+      "order_id": {"type": "string"}, "amount": {"type": "number", "minimum": 0},
+      "currency": {"type": "string", "pattern": "^[A-Z]{3}$"}, "payment_method": {"type": "string"}
+    }}
+  }
+}
