@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CustomerEventEnvelopeV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "event_type", "event_version", "event_timestamp", "user_id", "source", "trace_id", "properties"],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 1},
+    "event_type": {"type": "string", "minLength": 1},
+    "event_version": {"type": "integer", "const": 1},
+    "event_timestamp": {"type": "string", "format": "date-time"},
+    "user_id": {"type": "string", "minLength": 1},
+    "session_id": {"type": ["string", "null"]},
+    "product_id": {"type": ["string", "null"]},
+    "source": {"type": "string", "minLength": 1},
+    "trace_id": {"type": "string", "minLength": 1},
+    "properties": {"type": "object"}
+  }
+}
