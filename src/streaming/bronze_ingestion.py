@@ -1,13 +1,9 @@
-"""Kafka -> Bronze Structured Streaming entrypoint.
-
-The job is intentionally small and composable: connection/configuration is
-kept at the edge while parsing, quality and persistence remain testable.
-"""
+"""Kafka -> Bronze Structured Streaming entrypoint."""
 from __future__ import annotations
 
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.types import StringType, StructField, StructType
+from pyspark.sql.types import MapType, StringType, StructField, StructType
 
 EVENT_SCHEMA = StructType([
     StructField("event_id", StringType(), False),
@@ -19,7 +15,7 @@ EVENT_SCHEMA = StructType([
     StructField("product_id", StringType(), True),
     StructField("source", StringType(), True),
     StructField("trace_id", StringType(), True),
-    StructField("properties", StringType(), True),
+    StructField("properties", MapType(StringType(), StringType()), True),
 ])
 
 
@@ -28,7 +24,7 @@ def parse_kafka_events(kafka_df: DataFrame) -> DataFrame:
     parsed = (
         kafka_df.select(
             F.col("key").cast("string").alias("kafka_key"),
-            F.col("topic"), F.col("partition"), F.col("offset"), F.col("timestamp").alias("kafka_timestamp"),
+            "topic", "partition", "offset", F.col("timestamp").alias("kafka_timestamp"),
             F.from_json(F.col("value").cast("string"), EVENT_SCHEMA).alias("event"),
         )
         .select("kafka_key", "topic", "partition", "offset", "kafka_timestamp", "event.*")
@@ -38,31 +34,23 @@ def parse_kafka_events(kafka_df: DataFrame) -> DataFrame:
 
 def prepare_bronze(kafka_df: DataFrame) -> DataFrame:
     """Apply event-time parsing and a replay-safe ingestion timestamp."""
-    return parse_kafka_events(kafka_df).withColumn(
-        "event_timestamp", F.to_timestamp("event_timestamp")
+    return parse_kafka_events(kafka_df).withColumn("event_timestamp", F.to_timestamp("event_timestamp"))
+
+
+def build_bronze_stream(spark: SparkSession, bootstrap_servers: str, topic: str, starting_offsets: str = "latest") -> DataFrame:
+    """Create the streaming DataFrame; no side effects occur until writeStream."""
+    return (
+        spark.readStream.format("kafka")
+        .option("kafka.bootstrap.servers", bootstrap_servers)
+        .option("subscribe", topic)
+        .option("startingOffsets", starting_offsets)
+        .option("failOnDataLoss", "false")
+        .load()
+        .transform(prepare_bronze)
     )
 
 
-def build_bronze_stream(
-    spark: SparkSession,
-    bootstrap_servers: str,
-    topic: str,
-    starting_offsets: str = "latest",
-) -> DataFrame:
-    """Create the streaming DataFrame; no side effects occur until writeStream."""
-    return spark.readStream.format("kafka").option(
-        "kafka.bootstrap.servers", bootstrap_servers
-    ).option("subscribe", topic).option("startingOffsets", starting_offsets).option(
-        "failOnDataLoss", "false"
-    ).load().transform(prepare_bronze)
-
-
-def write_bronze(
-    events: DataFrame,
-    output_path: str,
-    checkpoint_path: str,
-    trigger_once: bool = False,
-):
+def write_bronze(events: DataFrame, output_path: str, checkpoint_path: str, trigger_once: bool = False):
     """Persist an append-only Bronze Delta stream with checkpointing."""
     writer = (
         events.withWatermark("event_timestamp", "15 minutes")
