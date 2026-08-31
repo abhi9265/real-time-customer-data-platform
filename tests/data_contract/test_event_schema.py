@@ -1,4 +1,4 @@
-import json
+import json  # noqa: I001
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
