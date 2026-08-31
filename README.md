@@ -60,6 +60,43 @@ Bronze    Quarantine
    BI / ML / AI workloads
 ```
 
+## Kafka Streaming Flow
+
+The intended production event path is **producer → Kafka → Spark Structured Streaming → Bronze → Silver → Customer 360 → Gold**. The producer/Kafka boundary handles continuous event delivery, while Spark owns validation, stateful transformation, deduplication and downstream lakehouse processing.
+
+```text
+┌──────────────┐     ┌──────────┐     ┌──────────────────────┐
+│ Product App  │ ──► │  Kafka   │ ──► │ Spark Structured     │
+│ / Producer   │     │  Topic   │     │ Streaming            │
+└──────────────┘     └──────────┘     └──────────┬───────────┘
+                                                  │
+                         ┌────────────────────────┴──────────────┐
+                         ▼                                       ▼
+                  ┌─────────────┐                         ┌─────────────┐
+                  │   Bronze    │                         │ Quarantine  │
+                  │ raw events  │                         │ bad events  │
+                  └──────┬──────┘                         └─────────────┘
+                         ▼
+                  ┌─────────────┐
+                  │   Silver    │
+                  │ quality +   │
+                  │ dedup/state │
+                  └──────┬──────┘
+                         ▼
+                  ┌─────────────┐
+                  │ Customer 360│
+                  │ + CDC/SCD2  │
+                  └──────┬──────┘
+                         ▼
+                  ┌─────────────┐
+                  │    Gold     │
+                  │ KPI/revenue │
+                  │ /funnel     │
+                  └─────────────┘
+```
+
+**Current evidence:** local Spark tests verify the streaming-oriented transformation path. Kafka remains a production integration boundary; the README does not claim a live Kafka cluster or end-to-end Kafka throughput test. fileciteturn1066file0
+
 ## Architecture → Code Map
 
 | Architecture component | Repository implementation | Purpose |
@@ -70,9 +107,48 @@ Bronze    Quarantine
 | Silver | streaming/Silver modules | Quality rules, deduplication and curated events |
 | Customer 360 | Customer-state modules | Customer state and sessionization foundations |
 | CDC / SCD2 | CDC/SCD2 modules | Historization and change-processing patterns |
-| Gold | Gold modules | KPI, revenue and funnel analytics foundations |
+| Gold | `src/gold/product_analytics.py` | Customer KPIs, revenue, funnel and product metrics |
 | Tests | `tests/` | Unit and data-contract verification |
 | Architecture | `architecture/` | System design and ADRs |
+
+## Gold Layer → BI Report Preview
+
+The Gold layer is designed as the **analytics serving contract** for BI consumers. The repository's actual Gold code defines daily customer KPIs, daily revenue, conversion funnel and product-performance datasets. fileciteturn1069file0
+
+### Executive Customer & Product Analytics
+
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│ REAL-TIME CUSTOMER 360 — GOLD LAYER / BI REPORT PREVIEW         │
+├──────────────┬──────────────┬──────────────┬────────────────────┤
+│  EVENTS      │  SESSIONS    │  ORDERS      │  REVENUE           │
+│  Daily       │  Daily       │  Daily       │  Daily             │
+│  Customer KPIs│ Customer KPI │ Customer KPI │ Payment events     │
+├──────────────┴──────────────┴──────────────┴────────────────────┤
+│                                                                  │
+│  CONVERSION FUNNEL                                                │
+│  Product Views  ──►  Cart Adds  ──►  Checkout  ──►  Orders      │
+│       │                 │                │              │          │
+│     viewers         cart_users     checkout_users    buyers       │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│  PRODUCT PERFORMANCE                                              │
+│  Views  |  Cart Adds  |  Orders  |  Active Users  |  Date/Product│
+├──────────────────────────────────────────────────────────────────┤
+│  Serving consumers: Power BI / BI / ML / AI                       │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Gold metric contract
+
+| Gold dataset | Grain | Example measures |
+|---|---|---|
+| Daily customer KPIs | Customer × Day | Events, sessions, products viewed, cart adds, checkouts, orders, payments |
+| Daily revenue | Day | Revenue, successful payments, paying customers |
+| Conversion funnel | Day | Viewers, cart users, checkout users, buyers, conversion rates |
+| Product performance | Product × Day | Views, cart adds, orders, active users |
+
+> **Presentation note:** this is a **README BI/report-style preview**, not a claim that a Power BI report has been deployed. It shows recruiters how the Gold layer can be consumed by a dashboard and makes the serving-layer grain explicit.
 
 ## Engineering Capabilities
 
@@ -100,7 +176,7 @@ python -m pip install -e .[test]
 pytest
 ```
 
-The documented demo uses local Spark to verify streaming-oriented transformations, event contracts, quality handling and customer-state logic. fileciteturn1040file0
+The documented demo uses local Spark to verify streaming-oriented transformations, event contracts, quality handling and customer-state logic. fileciteturn1066file0
 
 ### What the demo proves
 
@@ -122,11 +198,11 @@ contract validation
                  Gold
 ```
 
-This is **local transformation evidence**. Kafka remains a production integration boundary, and the repository explicitly avoids fabricating managed Kafka/Spark deployment or end-to-end load-test evidence. fileciteturn1040file0
+This is **local transformation evidence**. Kafka remains a production integration boundary, and the repository explicitly avoids fabricating managed Kafka/Spark deployment or end-to-end load-test evidence. fileciteturn1066file0
 
 ## Benchmark / Verification Reference
 
-The repository includes an executable benchmark harness for measuring the streaming verification suite. It runs a targeted PySpark test suite, records runtime and pass/fail status, and writes JSON/CSV result files under `benchmark-results/`. fileciteturn1041file0
+The repository includes an executable benchmark harness for measuring the streaming verification suite. It runs a targeted PySpark test suite, records runtime and pass/fail status, and writes JSON/CSV result files under `benchmark-results/`. fileciteturn1064file0
 
 Run it with:
 
