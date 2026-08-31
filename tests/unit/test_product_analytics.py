@@ -1,6 +1,10 @@
 from datetime import date
 
-from src.gold.product_analytics import conversion_funnel, daily_customer_kpis, product_performance
+from src.gold.product_analytics import (
+    conversion_funnel,
+    daily_customer_kpis,
+    product_performance,
+)
 
 
 def test_daily_customer_kpis_preserve_customer_day_grain(spark):
