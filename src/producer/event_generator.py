@@ -9,8 +9,8 @@ from __future__ import annotations
 import json
 import random
 import uuid
-from datetime import datetime, timezone
-from typing import Iterator
+from collections.abc import Iterator
+from datetime import UTC, datetime
 
 EVENT_TYPES = (
     "user_registered",
@@ -31,7 +31,7 @@ def generate_event(event_type: str, user_id: str, seed: int | None = None) -> di
         "event_id": event_id,
         "event_type": event_type,
         "event_version": 1,
-        "event_timestamp": datetime.now(timezone.utc).isoformat(),
+        "event_timestamp": datetime.now(UTC).isoformat(),
         "user_id": user_id,
         "product_id": f"prd_{rng.randint(1000, 9999)}" if event_type in {"product_viewed", "cart_added"} else None,
         "session_id": f"ses_{rng.randint(100000, 999999)}",
