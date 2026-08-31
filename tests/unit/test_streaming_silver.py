@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime  # noqa: I001
 
 from pyspark.sql.types import StringType, StructField, StructType, TimestampType
 
