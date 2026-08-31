@@ -1,4 +1,8 @@
-from src.producer.event_generator import generate_event, generate_events, serialize_event
+from src.producer.event_generator import (
+    generate_event,
+    generate_events,
+    serialize_event,
+)
 
 
 def test_event_has_contract_identity_fields():
