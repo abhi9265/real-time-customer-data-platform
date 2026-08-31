@@ -1,14 +1,14 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
-from src.customer360.sessionization import assign_sessions, build_session_facts
 from src.customer360.scd2_customer import detect_customer_changes
+from src.customer360.sessionization import assign_sessions, build_session_facts
 
 
 def test_sessionization_splits_after_inactivity_window(spark):
     df = spark.createDataFrame([
-        ("usr-1", "evt-1", datetime(2026, 8, 18, 10, 0), "product_viewed", "prd-1"),
-        ("usr-1", "evt-2", datetime(2026, 8, 18, 10, 10), "cart_added", "prd-1"),
-        ("usr-1", "evt-3", datetime(2026, 8, 18, 11, 0), "product_viewed", "prd-2"),
+        ("usr-1", "evt-1", datetime(2026, 8, 18, 10, 0, tzinfo=UTC), "product_viewed", "prd-1"),
+        ("usr-1", "evt-2", datetime(2026, 8, 18, 10, 10, tzinfo=UTC), "cart_added", "prd-1"),
+        ("usr-1", "evt-3", datetime(2026, 8, 18, 11, 0, tzinfo=UTC), "product_viewed", "prd-2"),
     ], ["user_id", "event_id", "event_timestamp", "event_type", "product_id"])
 
     result = assign_sessions(df, inactivity_minutes=30)
@@ -19,8 +19,8 @@ def test_sessionization_splits_after_inactivity_window(spark):
 
 def test_session_facts_capture_business_metrics(spark):
     df = spark.createDataFrame([
-        ("usr-1", 1, "evt-1", datetime(2026, 8, 18, 10, 0), "product_viewed", "prd-1"),
-        ("usr-1", 1, "evt-2", datetime(2026, 8, 18, 10, 5), "order_created", "prd-1"),
+        ("usr-1", 1, "evt-1", datetime(2026, 8, 18, 10, 0, tzinfo=UTC), "product_viewed", "prd-1"),
+        ("usr-1", 1, "evt-2", datetime(2026, 8, 18, 10, 5, tzinfo=UTC), "order_created", "prd-1"),
     ], ["user_id", "session_number", "event_id", "event_timestamp", "event_type", "product_id"])
 
     row = build_session_facts(df).first()
