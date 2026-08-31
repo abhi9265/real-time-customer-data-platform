@@ -91,6 +91,8 @@ pytest
 
 The test suite uses a local Spark environment for transformation-level verification. Kafka and a production streaming deployment are integration concerns and are not represented as a production service in this repository.
 
+See [`docs/DEMO.md`](docs/DEMO.md) for the short reproducible local execution path and the boundary between local verification and production infrastructure.
+
 ## Event-to-Analytics Flow
 
 A typical event moves through the platform as follows:
