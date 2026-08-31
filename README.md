@@ -2,6 +2,10 @@
 
 [![CI](https://github.com/abhi9265/real-time-customer-data-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/abhi9265/real-time-customer-data-platform/actions/workflows/ci.yml)
 
+> **Real-time data engineering portfolio project:** process customer events with Spark Structured Streaming, Kafka-oriented ingestion, data quality, deduplication, Customer 360 and CDC/SCD2 patterns.
+>
+> **Topics:** `PySpark` · `Spark Structured Streaming` · `Kafka` · `Delta Lake` · `Customer 360` · `CDC` · `SCD2` · `Data Quality` · `Data Engineering`
+
 A production-oriented **real-time customer data platform prototype** demonstrating how product events can be validated, processed with Spark, historized and transformed into analytics-ready customer datasets.
 
 > **Portfolio focus:** distributed data processing, streaming reliability, incremental computation, CDC/SCD2, data quality, testing, CI/CD, and AI-ready data foundations.
