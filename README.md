@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/abhi9265/real-time-customer-data-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/abhi9265/real-time-customer-data-platform/actions/workflows/ci.yml)
 
-> **Real-time data engineering portfolio project:** process customer events with Spark Structured Streaming, Kafka-oriented ingestion, data quality, deduplication, Customer 360 and CDC/SCD2 patterns.
+> **Real-time data engineering portfolio project:** process customer events with Spark Structured Streaming, Kafka ingestion, data quality, deduplication, Customer 360 and CDC/SCD2 patterns.
 >
 > **Topics:** `PySpark` · `Spark Structured Streaming` · `Kafka` · `Delta Lake` · `Customer 360` · `CDC` · `SCD2` · `Data Quality` · `Data Engineering`
 
@@ -10,13 +10,13 @@
 
 A production-oriented **real-time customer data platform prototype** showing how product events can be validated, processed with Spark, historized and transformed into analytics-ready customer datasets.
 
-> **Evidence boundary:** the repository verifies its streaming-oriented transformation path locally. Kafka and managed streaming infrastructure remain explicit production integration boundaries; no production Kafka deployment or load-test result is claimed without the corresponding environment and evidence.
+> **Evidence boundary:** the repository now includes a reproducible Docker-based Kafka environment and a GitHub Actions integration job that publishes deterministic events to Kafka and verifies that Spark Structured Streaming consumes them. Managed Kafka/Spark infrastructure and production-scale load-test results are not claimed.
 
 ## Business Problem
 
 Product applications generate a continuous stream of customer activity. A useful data platform must handle invalid events, duplicates, late arrivals and changing customer attributes while still producing trustworthy customer and product analytics.
 
-This repository demonstrates the core engineering patterns for that problem without requiring access to a production Kafka cluster or customer data.
+This repository demonstrates the core engineering patterns for that problem without requiring access to production customer data.
 
 ## Architecture
 
@@ -60,9 +60,28 @@ Bronze    Quarantine
    BI / ML / AI workloads
 ```
 
-## Kafka Streaming Flow
+## Verified Kafka Streaming Flow
 
-The intended production event path is **producer → Kafka → Spark Structured Streaming → Bronze → Silver → Customer 360 → Gold**. The producer/Kafka boundary handles continuous event delivery, while Spark owns validation, stateful transformation, deduplication and downstream lakehouse processing.
+The repository now verifies the core event boundary end-to-end in GitHub Actions:
+
+```text
+Deterministic Producer
+        │
+        ▼
+Docker Kafka topic: customer-events
+        │
+        ▼
+Spark Structured Streaming
+        │
+        ▼
+5 JSON events observed
+```
+
+The smoke test uses `docker-compose.kafka.yml`, publishes five deterministic customer events, starts a local Spark Structured Streaming query using the Spark Kafka connector, and fails unless all five events are observed. This proves an actual Kafka → Spark execution path rather than a README-only architecture claim.
+
+The verification environment is intentionally local/reproducible. It does **not** claim managed Kafka deployment, production throughput, or production SLA evidence.
+
+## Kafka Streaming Flow
 
 ```text
 ┌──────────────┐     ┌──────────┐     ┌──────────────────────┐
@@ -95,13 +114,14 @@ The intended production event path is **producer → Kafka → Spark Structured 
                   └─────────────┘
 ```
 
-**Current evidence:** local Spark tests verify the streaming-oriented transformation path. Kafka remains a production integration boundary; the README does not claim a live Kafka cluster or end-to-end Kafka throughput test. fileciteturn1066file0
-
 ## Architecture → Code Map
 
 | Architecture component | Repository implementation | Purpose |
 |---|---|---|
 | Event contracts | `schemas/` | Versioned event definitions and validation |
+| Kafka demo environment | `docker-compose.kafka.yml` | Reproducible local Kafka broker |
+| Event producer | `scripts/kafka_producer.py` | Deterministic customer-event publisher |
+| Kafka → Spark verification | `scripts/kafka_spark_smoke.py` | End-to-end streaming smoke test |
 | Ingestion / streaming | `src/` | Event ingestion and Structured Streaming transformations |
 | Bronze | streaming/data-layer modules | Raw event persistence and replay-oriented processing |
 | Silver | streaming/Silver modules | Quality rules, deduplication and curated events |
@@ -109,11 +129,12 @@ The intended production event path is **producer → Kafka → Spark Structured 
 | CDC / SCD2 | CDC/SCD2 modules | Historization and change-processing patterns |
 | Gold | `src/gold/product_analytics.py` | Customer KPIs, revenue, funnel and product metrics |
 | Tests | `tests/` | Unit and data-contract verification |
+| CI/CD | `.github/workflows/ci.yml` | Tests plus Kafka → Spark integration verification |
 | Architecture | `architecture/` | System design and ADRs |
 
 ## Gold Layer → BI Report Preview
 
-The Gold layer is designed as the **analytics serving contract** for BI consumers. The repository's actual Gold code defines daily customer KPIs, daily revenue, conversion funnel and product-performance datasets. fileciteturn1069file0
+The Gold layer is designed as the **analytics serving contract** for BI consumers. The repository's actual Gold code defines daily customer KPIs, daily revenue, conversion funnel and product-performance datasets.
 
 ### Executive Customer & Product Analytics
 
@@ -125,15 +146,12 @@ The Gold layer is designed as the **analytics serving contract** for BI consumer
 │  Daily       │  Daily       │  Daily       │  Daily             │
 │  Customer KPIs│ Customer KPI │ Customer KPI │ Payment events     │
 ├──────────────┴──────────────┴──────────────┴────────────────────┤
-│                                                                  │
-│  CONVERSION FUNNEL                                                │
-│  Product Views  ──►  Cart Adds  ──►  Checkout  ──►  Orders      │
-│       │                 │                │              │          │
-│     viewers         cart_users     checkout_users    buyers       │
+│  CONVERSION FUNNEL                                               │
+│  Product Views  ──►  Cart Adds  ──►  Checkout  ──►  Orders     │
 │                                                                  │
 ├──────────────────────────────────────────────────────────────────┤
 │  PRODUCT PERFORMANCE                                              │
-│  Views  |  Cart Adds  |  Orders  |  Active Users  |  Date/Product│
+│  Views | Cart Adds | Orders | Active Users | Date/Product       │
 ├──────────────────────────────────────────────────────────────────┤
 │  Serving consumers: Power BI / BI / ML / AI                       │
 └──────────────────────────────────────────────────────────────────┘
@@ -148,105 +166,54 @@ The Gold layer is designed as the **analytics serving contract** for BI consumer
 | Conversion funnel | Day | Viewers, cart users, checkout users, buyers, conversion rates |
 | Product performance | Product × Day | Views, cart adds, orders, active users |
 
-> **Presentation note:** this is a **README BI/report-style preview**, not a claim that a Power BI report has been deployed. It shows recruiters how the Gold layer can be consumed by a dashboard and makes the serving-layer grain explicit.
-
-## Engineering Capabilities
-
-| Area | Demonstrated capability |
-|---|---|
-| Streaming | Spark Structured Streaming and Kafka-oriented design |
-| Reliability | Event identity, deduplication, replay-oriented processing |
-| State | Customer state and sessionization foundations |
-| Data quality | Contract validation, rejection reasons and quarantine |
-| Lakehouse | Bronze/Silver/Gold Delta architecture |
-| Customer data | Customer 360 and CDC/SCD2 patterns |
-| Analytics | Customer KPIs, revenue, funnel and product metrics |
-| Testing | Local Spark tests and data-contract tests |
-| CI/CD | GitHub Actions on pull requests and `main` |
-| AI readiness | Customer-state and analytics foundations for feature/embedding pipelines |
+> **Presentation note:** this is a **README BI/report-style preview**, not a claim that a Power BI report has been deployed.
 
 ## Execution Evidence
 
-### Verified local path
+### Local Kafka demo
 
-The repository provides a reproducible local verification path without requiring production Kafka infrastructure:
+Prerequisites: Docker and Python 3.11+.
 
 ```bash
-python -m pip install -e .[test]
-pytest
+docker compose -f docker-compose.kafka.yml up -d
+python -m pip install -e .[test,integration]
+python scripts/kafka_producer.py
+python scripts/kafka_spark_smoke.py
+docker compose -f docker-compose.kafka.yml down -v
 ```
 
-The documented demo uses local Spark to verify streaming-oriented transformations, event contracts, quality handling and customer-state logic. fileciteturn1066file0
+The smoke test publishes five deterministic events and verifies that Spark Structured Streaming observes all five through the Kafka connector.
 
-### What the demo proves
+### GitHub Actions verification
 
-```text
-product event
-    ↓
-contract validation
-    ├── invalid → quarantine
-    └── valid → Bronze
-                    ↓
-             dedup + quality
-                    ↓
-                  Silver
-                    ↓
-          customer state/session
-                    ↓
-               Customer 360
-                    ↓
-                 Gold
-```
+Every push/PR runs:
 
-This is **local transformation evidence**. Kafka remains a production integration boundary, and the repository explicitly avoids fabricating managed Kafka/Spark deployment or end-to-end load-test evidence. fileciteturn1066file0
+1. Python tests and Ruff checks.
+2. A clean Kafka container.
+3. The deterministic event producer.
+4. Spark Structured Streaming with the Kafka connector.
+5. An assertion that all five published events were consumed.
+6. Kafka diagnostics on failure.
+
+This gives the repository an automated **Kafka → Spark execution gate** in addition to its unit/data-contract tests.
 
 ## Benchmark / Verification Reference
 
-The repository includes an executable benchmark harness for measuring the streaming verification suite. It runs a targeted PySpark test suite, records runtime and pass/fail status, and writes JSON/CSV result files under `benchmark-results/`. fileciteturn1064file0
+The repository includes an executable benchmark harness for the streaming verification suite. It measures the local transformation test path; it should not be interpreted as Kafka throughput unless the Kafka integration workflow is explicitly being measured.
 
-Run it with:
+Run:
 
 ```bash
 python benchmarks/run_benchmark.py
 ```
 
-> **Important:** benchmark numbers should be reported only from generated result artifacts from an actual run. This README intentionally does not invent a runtime or throughput figure.
+> Benchmark numbers should be reported only from generated result artifacts from an actual run. No runtime or throughput figure is invented in this README.
 
-## Run the Demo
+## Run the Tests
 
 ```bash
-git clone https://github.com/abhi9265/real-time-customer-data-platform.git
-cd real-time-customer-data-platform
 python -m pip install -e .[test]
 pytest
-```
-
-For the short reproducible path, see [`docs/DEMO.md`](docs/DEMO.md).
-
-## Event-to-Analytics Flow
-
-```text
-Product event
-    ↓
-Schema / contract validation
-    ├── invalid → quarantine
-    └── valid
-          ↓
-       Bronze
-          ↓
-   dedup + quality rules
-          ↓
-       Silver
-          ↓
- customer state + sessions
-          ↓
-     Customer 360
-          ↓
-      CDC / SCD2
-          ↓
-        Gold
-          ↓
-   KPI / revenue / funnel
 ```
 
 ## Repository Structure
@@ -259,6 +226,8 @@ schemas/               event contracts and versions
 src/                   ingestion, streaming, Silver, Customer 360 and Gold
 tests/                 unit and data-contract tests
 benchmarks/            executable verification benchmark
+scripts/               Kafka producer and Spark integration smoke test
+docker-compose.kafka.yml local Kafka/KRaft environment
 pyproject.toml         Python project and test dependencies
 ```
 
@@ -274,6 +243,8 @@ Implementation + tests
 Pull request
     ↓
 GitHub Actions
+    ├── unit/data-contract tests
+    └── Kafka → Spark integration smoke test
     ↓
 Review / validation
     ↓
@@ -282,10 +253,12 @@ main
 
 ## Current Status
 
-### Implemented foundations
+### Implemented and verified
 
 - Event contract/schema validation
-- Streaming transformation patterns
+- Reproducible Kafka/KRaft local environment
+- Deterministic Kafka event producer
+- Kafka → Spark Structured Streaming integration smoke test
 - Bronze/Silver/Gold data-layer design
 - Data-quality and quarantine patterns
 - Event deduplication/replay-oriented logic
@@ -297,14 +270,13 @@ main
 
 ### Production hardening / integration work
 
-- Kafka environment and topic/deployment contracts
+- Managed Kafka/Spark production deployment
 - End-to-end streaming observability and operational SLAs
-- Production deployment configuration
-- Managed Kafka/Spark integration testing
 - Production-scale performance/load benchmarks
+- Multi-broker/high-availability Kafka validation
 - AI/ML feature pipelines and model-serving integration
 
-This distinction is intentional: the repository documents the engineering foundations that are implemented separately from infrastructure and production hardening that require a real deployment environment.
+This distinction is intentional: the repository documents what is actually implemented and verified separately from infrastructure and production hardening that require a real deployment environment.
 
 ## Interview Topics
 
