@@ -12,6 +12,9 @@ test = [
   "pytest>=8,<9",
   "pyspark>=4.0,<4.1",
 ]
+integration = [
+  "kafka-python-ng>=2.2,<3",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
