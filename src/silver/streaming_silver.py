@@ -3,6 +3,8 @@
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
+from src.silver.streaming_reliability import deduplicate_batch_deterministic
+
 REQUIRED_EVENT_TYPES = {
     "user_registered", "user_login", "product_viewed", "cart_added",
     "checkout_started", "order_created", "payment_completed",
@@ -22,8 +24,9 @@ def normalize_events(bronze_df: DataFrame) -> DataFrame:
     for column in ("user_id", "session_id", "product_id"):
         df = _trim_if_present(df, column)
     if "event_timestamp" in df.columns:
-        df = df.withColumn("event_date", F.to_date("event_timestamp")) \
-               .withColumn("event_hour", F.hour("event_timestamp"))
+        df = df.withColumn("event_date", F.to_date("event_timestamp")).withColumn(
+            "event_hour", F.hour("event_timestamp")
+        )
     return df.withColumn("processed_at", F.current_timestamp())
 
 
@@ -51,8 +54,8 @@ def classify_quality(events_df: DataFrame) -> DataFrame:
 
 
 def deduplicate_batch(events_df: DataFrame) -> DataFrame:
-    """Keep one trusted observation for each event identity."""
-    return events_df.filter(F.col("quality_status") == "VALID").dropDuplicates(["event_id"])
+    """Keep the newest trusted observation for each event identity."""
+    return deduplicate_batch_deterministic(events_df)
 
 
 def split_silver_and_quarantine(events_df: DataFrame) -> tuple[DataFrame, DataFrame]:
