@@ -6,9 +6,14 @@ from pyspark.sql import functions as F
 
 def deduplicate_batch_deterministic(events_df: DataFrame) -> DataFrame:
     """Keep the newest observation for each event_id deterministically."""
+    # Timestamp ties are possible when events are retried or arrive with the
+    # same source timestamps. Add a stable row fingerprint so row_number does
+    # not depend on Spark execution order for those ties.
+    tie_breaker = F.xxhash64(*[F.col(column) for column in sorted(events_df.columns)])
     window = Window.partitionBy("event_id").orderBy(
         F.col("event_timestamp").desc_nulls_last(),
         F.col("processed_at").desc_nulls_last(),
+        tie_breaker.desc(),
     )
     return (
         events_df.filter(F.col("quality_status") == "VALID")
