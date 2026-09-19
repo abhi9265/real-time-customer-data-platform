@@ -98,7 +98,7 @@ def main() -> None:
 
         print(
             "Kafka -> Spark checkpoint/restart verified: "
-            f"{observed_after_restart} committed events remained exactly-once at the sink"
+            f"{observed_after_restart} committed events were not replayed at the sink"
         )
     finally:
         spark.stop()
