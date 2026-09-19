@@ -87,6 +87,12 @@ jobs:
           PYSPARK_DRIVER_PYTHON: python
         run: python scripts/kafka_spark_smoke.py
 
+      - name: Verify checkpoint restart behavior
+        env:
+          PYSPARK_PYTHON: python
+          PYSPARK_DRIVER_PYTHON: python
+        run: python scripts/kafka_checkpoint_restart_smoke.py
+
       - name: Kafka diagnostics
         if: always()
         run: docker compose -f docker-compose.kafka.yml logs --no-color
