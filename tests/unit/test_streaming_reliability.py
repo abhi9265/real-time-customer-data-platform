@@ -59,3 +59,23 @@ def test_deduplicate_batch_is_deterministic_when_timestamps_tie(spark):
     second = deduplicate_batch_deterministic(df.orderBy(F.desc("user_id"))).collect()[0].user_id
 
     assert first == second
+
+
+def test_streaming_batch_metrics_counts_duplicate_rows(spark):
+    from src.silver.streaming_reliability import streaming_batch_metrics
+
+    rows = [
+        ("e1", "VALID"),
+        ("e1", "VALID"),
+        ("e2", "VALID"),
+        ("e3", "REJECTED"),
+    ]
+    df = spark.createDataFrame(rows, "event_id string, quality_status string")
+
+    assert streaming_batch_metrics(df, batch_id=7) == {
+        "batch_id": 7,
+        "events_received": 4,
+        "events_valid": 3,
+        "events_rejected": 1,
+        "events_duplicate": 1,
+    }
