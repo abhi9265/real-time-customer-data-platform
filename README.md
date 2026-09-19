@@ -77,7 +77,7 @@ Spark Structured Streaming
 5 JSON events observed
 ```
 
-The smoke test uses `docker-compose.kafka.yml`, publishes five deterministic customer events, starts a local Spark Structured Streaming query using the Spark Kafka connector, and fails unless all five events are observed. This proves an actual Kafka → Spark execution path rather than a README-only architecture claim.
+The smoke test uses `docker-compose.kafka.yml`, publishes five deterministic customer events, starts a local Spark Structured Streaming query using the Spark Kafka connector, and fails unless all five events are observed. This proves an actual Kafka → Spark execution path rather than a README-only architecture claim. A second CI check restarts a Spark query with the same checkpoint after the initial batch has been committed and verifies that the persisted sink remains at five events, providing reproducible checkpoint/restart evidence without claiming production-scale exactly-once guarantees.
 
 The verification environment is intentionally local/reproducible. It does **not** claim managed Kafka deployment, production throughput, or production SLA evidence.
 
