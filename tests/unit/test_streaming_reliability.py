@@ -42,3 +42,20 @@ def test_watermark_is_attached_to_event_time(spark):
     )
     watermarked = apply_event_time_watermark(df, "15 minutes")
     assert "event_timestamp" in watermarked.columns
+
+
+def test_deduplicate_batch_is_deterministic_when_timestamps_tie(spark):
+    rows = [
+        ("e1", "u-low", datetime(2026, 1, 1, 10, 0), datetime(2026, 1, 1, 10, 2), "VALID"),
+        ("e1", "u-high", datetime(2026, 1, 1, 10, 0), datetime(2026, 1, 1, 10, 2), "VALID"),
+    ]
+    df = spark.createDataFrame(
+        rows,
+        "event_id string, user_id string, event_timestamp timestamp, "
+        "processed_at timestamp, quality_status string",
+    )
+
+    first = deduplicate_batch_deterministic(df).collect()[0].user_id
+    second = deduplicate_batch_deterministic(df.orderBy(F.desc("user_id"))).collect()[0].user_id
+
+    assert first == second
