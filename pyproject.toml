@@ -15,6 +15,9 @@ test = [
 integration = [
   "kafka-python-ng>=2.2,<3",
 ]
+dev = [
+  "ruff==0.16.8",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
