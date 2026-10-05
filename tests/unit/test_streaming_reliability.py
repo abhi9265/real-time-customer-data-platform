@@ -47,7 +47,7 @@ def test_watermark_is_attached_to_event_time(spark):
 def test_deduplicate_batch_is_deterministic_when_timestamps_tie(spark):
     rows = [
         ("e1", "u-low", datetime(2026, 1, 1, 10, 0, tzinfo=UTC), datetime(2026, 1, 1, 10, 2, tzinfo=UTC), "VALID"),
-        ("e1", "u-high", datetime(2026, 1, 1, 10, 0, tzinfo=UTC), datetime(2026, 1, 10, 2, tzinfo=UTC), "VALID"),
+        ("e1", "u-high", datetime(2026, 1, 1, 10, 0, tzinfo=UTC), datetime(2026, 1, 1, 10, 2, tzinfo=UTC), "VALID"),
     ]
     df = spark.createDataFrame(
         rows,
