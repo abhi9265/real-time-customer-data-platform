@@ -46,10 +46,11 @@ def _start_query(spark: SparkSession, checkpoint: str, output: str):
 
 def _wait_for_rows(spark: SparkSession, output: str, expected: int) -> int:
     deadline = time.time() + 60
+    observed = 0
     while time.time() < deadline:
         try:
             observed = spark.read.parquet(output).count()
-        except Exception:
+        except (OSError, RuntimeError):
             observed = 0
         if observed >= expected:
             return observed
