@@ -41,4 +41,17 @@ def streaming_batch_metrics(
     total = events_df.count()
     rejected = events_df.filter(F.col("quality_status") == "REJECTED").count()
     valid = events_df.filter(F.col("quality_status") == "VALID").count()
-    duplicate_rows = (\n        events_df.groupBy("event_id")\n        .count()\n        .filter(F.col("count") > 1)\n        .select(F.coalesce(F.sum(F.col("count") - 1), F.lit(0)).alias("duplicates"))\n        .collect()[0]["duplicates"]\n    )\n    return {\n        "batch_id": batch_id,\n        "events_received": total,\n        "events_valid": valid,\n        "events_rejected": rejected,\n        "events_duplicate": int(duplicate_rows or 0),\n    }
+    duplicate_rows = (
+        events_df.groupBy("event_id")
+        .count()
+        .filter(F.col("count") > 1)
+        .select(F.coalesce(F.sum(F.col("count") - 1), F.lit(0)).alias("duplicates"))
+        .collect()[0]["duplicates"]
+    )
+    return {
+        "batch_id": batch_id,
+        "events_received": total,
+        "events_valid": valid,
+        "events_rejected": rejected,
+        "events_duplicate": int(duplicate_rows or 0),
+    }
