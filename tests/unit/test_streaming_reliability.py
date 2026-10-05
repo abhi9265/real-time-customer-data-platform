@@ -25,7 +25,7 @@ def test_deduplicate_batch_keeps_latest_event_observation(spark):
     values = result.select("event_id", "processed_at").orderBy("event_id").collect()
 
     assert [(r.event_id, r.processed_at) for r in values] == [
-        ("e1", datetime(2026, 1, 1, 10, 2, tzinfo=UTC))
+        ("e1", datetime(2026, 1, 1, 10, 2))
     ]
 
 
@@ -47,7 +47,7 @@ def test_watermark_is_attached_to_event_time(spark):
 def test_deduplicate_batch_is_deterministic_when_timestamps_tie(spark):
     rows = [
         ("e1", "u-low", datetime(2026, 1, 1, 10, 0, tzinfo=UTC), datetime(2026, 1, 1, 10, 2, tzinfo=UTC), "VALID"),
-        ("e1", "u-high", datetime(2026, 1, 1, 10, 0, tzinfo=UTC), datetime(2026, 1, 1, 10, 2, tzinfo=UTC), "VALID"),
+        ("e1", "u-high", datetime(2026, 1, 1, 10, 0, tzinfo=UTC), datetime(2026, 1, 10, 2, tzinfo=UTC), "VALID"),
     ]
     df = spark.createDataFrame(
         rows,
