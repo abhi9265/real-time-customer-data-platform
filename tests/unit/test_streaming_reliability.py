@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from pyspark.sql import functions as F
@@ -11,9 +11,9 @@ from src.silver.streaming_reliability import (
 
 def test_deduplicate_batch_keeps_latest_event_observation(spark):
     rows = [
-        ("e1", "u1", datetime(2026, 1, 1, 10, 0), datetime(2026, 1, 1, 10, 1), "VALID"),
-        ("e1", "u1", datetime(2026, 1, 1, 10, 0), datetime(2026, 1, 1, 10, 2), "VALID"),
-        ("e2", "u2", datetime(2026, 1, 1, 10, 5), datetime(2026, 1, 1, 10, 6), "REJECTED"),
+        ("e1", "u1", datetime(2026, 1, 1, 10, 0, tzinfo=timezone.utc), datetime(2026, 1, 1, 10, 1, tzinfo=timezone.utc), "VALID"),
+        ("e1", "u1", datetime(2026, 1, 1, 10, 0, tzinfo=timezone.utc), datetime(2026, 1, 1, 10, 2, tzinfo=timezone.utc), "VALID"),
+        ("e2", "u2", datetime(2026, 1, 1, 10, 5, tzinfo=timezone.utc), datetime(2026, 1, 1, 10, 6, tzinfo=timezone.utc), "REJECTED"),
     ]
     df = spark.createDataFrame(
         rows,
@@ -25,7 +25,7 @@ def test_deduplicate_batch_keeps_latest_event_observation(spark):
     values = result.select("event_id", "processed_at").orderBy("event_id").collect()
 
     assert [(r.event_id, r.processed_at) for r in values] == [
-        ("e1", datetime(2026, 1, 1, 10, 2))
+        ("e1", datetime(2026, 1, 1, 10, 2, tzinfo=timezone.utc))
     ]
 
 
@@ -37,7 +37,7 @@ def test_watermark_requires_event_timestamp(spark):
 
 def test_watermark_is_attached_to_event_time(spark):
     df = spark.createDataFrame(
-        [(1, datetime(2026, 1, 1, 10, 0))],
+        [(1, datetime(2026, 1, 1, 10, 0, tzinfo=timezone.utc))],
         "event_id int, event_timestamp timestamp",
     )
     watermarked = apply_event_time_watermark(df, "15 minutes")
@@ -46,8 +46,8 @@ def test_watermark_is_attached_to_event_time(spark):
 
 def test_deduplicate_batch_is_deterministic_when_timestamps_tie(spark):
     rows = [
-        ("e1", "u-low", datetime(2026, 1, 1, 10, 0), datetime(2026, 1, 1, 10, 2), "VALID"),
-        ("e1", "u-high", datetime(2026, 1, 1, 10, 0), datetime(2026, 1, 1, 10, 2), "VALID"),
+        ("e1", "u-low", datetime(2026, 1, 1, 10, 0, tzinfo=timezone.utc), datetime(2026, 1, 1, 10, 2, tzinfo=timezone.utc), "VALID"),
+        ("e1", "u-high", datetime(2026, 1, 1, 10, 0, tzinfo=timezone.utc), datetime(2026, 1, 1, 10, 2, tzinfo=timezone.utc), "VALID"),
     ]
     df = spark.createDataFrame(
         rows,
