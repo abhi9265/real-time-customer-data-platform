@@ -24,8 +24,11 @@ def test_deduplicate_batch_keeps_latest_event_observation(spark):
     result = deduplicate_batch_deterministic(df)
     values = result.select("event_id", "processed_at").orderBy("event_id").collect()
 
-    assert [(r.event_id, r.processed_at) for r in values] == [
-        ("e1", datetime(2026, 1, 1, 10, 2))
+    assert [
+        (r.event_id, r.processed_at.replace(tzinfo=UTC))
+        for r in values
+    ] == [
+        ("e1", datetime(2026, 1, 1, 10, 2, tzinfo=UTC))
     ]
 
 
