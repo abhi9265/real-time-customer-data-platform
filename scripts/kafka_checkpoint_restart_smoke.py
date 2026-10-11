@@ -46,15 +46,23 @@ def _start_query(spark: SparkSession, checkpoint: str, output: str):
 
 def _wait_for_rows(spark: SparkSession, output: str, expected: int) -> int:
     deadline = time.time() + 60
+    output_path = Path(output)
     observed = 0
+
     while time.time() < deadline:
-        try:
+        # Spark may not have materialized its first Parquet part yet. Wait for
+        # the sink files rather than catching RuntimeError from Spark reads,
+        # which could hide a real query/JVM failure as a simple timeout.
+        has_parquet_files = output_path.is_dir() and any(
+            output_path.glob("*.parquet")
+        )
+        if has_parquet_files:
             observed = spark.read.parquet(output).count()
-        except (OSError, RuntimeError):
-            observed = 0
-        if observed >= expected:
-            return observed
+            if observed >= expected:
+                return observed
+
         time.sleep(1)
+
     return observed
 
 
